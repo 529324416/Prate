@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "app.py", line 11, in <module>
+    from utils import ring
+  File "/home/biscuit/桌面/MyProjects/Alarm/utils.py", line 19, in <module>
+    from _entry import *
+  File "/home/biscuit/桌面/MyProjects/Alarm/_entry.py", line 18, in <module>
+    exec(f"{key}=rd('{path}')")
+  File "<string>", line 1, in <module>
+  File "/home/biscuit/桌面/MyProjects/Alarm/_entry.py", line 6, in rd
+    with open(filepath,"r",encoding=encoding) as f:
+FileNotFoundError: [Errno 2] No such file or directory: './.fixed/transbk.qss'
