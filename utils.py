@@ -19,6 +19,20 @@ import multiprocessing
 from _entry import *
 # personal support
 
+class AlarmPosition:
+
+    BOTTOM_RIGHT = 'bottom_right'
+    CENTER = 'center'
+
+def get_position(pos,width,height):
+
+    topsize = QApplication.desktop().size()
+    topw,toph = topsize.width(),topsize.height()
+    if pos == AlarmPosition.BOTTOM_RIGHT:
+        return topw - width,toph - height
+    elif pos == AlarmPosition.CENTER:
+        return int((topw - width)/2),int((toph - height)/2)
+
 class _custom_window_base(QWidget):
     '''a window type based on qwidget which has fully transparent 
     window body but you can see the widgets on it'''
@@ -119,10 +133,11 @@ class AlarmTimerDone(QThread):
 class AlarmWindow(_single_label):
     '''a window based on webkit'''
 
-    def __init__(self,sound_path,title,content):
+    def __init__(self,sound_path,title,content,pos=AlarmPosition.BOTTOM_RIGHT):
 
         super(AlarmWindow,self).__init__()
         self.sound_path = sound_path
+        self.pos = pos
         self.make_up(title,content)
         self.build()
         
@@ -163,6 +178,7 @@ class AlarmWindow(_single_label):
         self.player = QtMultimedia.QMediaPlayer()
         self.sound = QtMultimedia.QMediaContent(QUrl(self.sound_path))
         self.resize(300,350)
+        self.move(*get_position(self.pos,self.width(),self.height()))
         self.show()
 
     def mousePressEvent(self,evt):
@@ -192,5 +208,10 @@ def _ring(title,content):
 
 def ring(title,content):
 
+    if len(title) >= 12:
+        title = title[:11] + ".."
     process = multiprocessing.Process(target=_ring,args=(title,content))
     process.start()
+
+if __name__ == "__main__":
+    ring("你你你你您呆里撒奸反馈萨的技法类三等奖阿拉法","hello world")
