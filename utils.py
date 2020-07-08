@@ -13,7 +13,7 @@ from PyQt5.QtGui import *
 
 import sys
 import time
-import threading
+import multiprocessing
 # std support
 
 from _entry import *
@@ -101,6 +101,7 @@ class AlarmTimer(QThread):
 class AlarmTimerDone(QThread):
 
     transparent_clt = pyqtSignal(float)
+    stop = pyqtSignal()
 
     def __init__(self,face):
 
@@ -113,8 +114,7 @@ class AlarmTimerDone(QThread):
             self.transparent_clt.emit(0.05 * i)
             time.sleep(0.02)
         self.box.hide()
-        QCoreApplication.instance().quit
-        
+        self.stop.emit()
 
 class AlarmWindow(_single_label):
     '''a window based on webkit'''
@@ -126,12 +126,11 @@ class AlarmWindow(_single_label):
         self.make_up(title,content)
         self.build()
         
-
     def make_up(self,title,content):
         '''build something on face'''
 
         self.layout_ = QVBoxLayout()
-        font_id = QFontDatabase.addApplicationFont("./resource/hanyizhuzi.ttf")
+        font_id = QFontDatabase.addApplicationFont("./static/hanyizhuzi.ttf")
         font_name = QFontDatabase.applicationFontFamilies(font_id)[0]
         self.font = QFont(font_name,18)
         self.header = QLabel()
@@ -139,10 +138,9 @@ class AlarmWindow(_single_label):
         self.header.setAlignment(Qt.AlignLeft)
         self.header.setFixedHeight(30)
         
-
-        self.header.setStyleSheet(r"QLabel{color:rgb(80,80,80)}")
+        self.header.setStyleSheet(r"QLabel{color:rgb(80,80,80);}")
         self.body = QLabel()
-        self.body.setStyleSheet(r"QLabel{color:rgb(96,96,96)}")
+        self.body.setStyleSheet(r"QLabel{color:rgb(96,96,96);}")
         self.font_content = QFont(font_name,15)
         self.body.setFont(self.font_content)
         self.body.setAlignment(Qt.AlignLeft)
@@ -160,6 +158,7 @@ class AlarmWindow(_single_label):
         self.ctl.ring.connect(self.play_sound)
         self.ctl_end = AlarmTimerDone(self)
         self.ctl_end.transparent_clt.connect(self.set_tranparency)
+        self.ctl_end.stop.connect(self.close)
         self.player = QtMultimedia.QMediaPlayer()
         self.sound = QtMultimedia.QMediaContent(QUrl(self.sound_path))
         self.resize(300,350)
@@ -183,14 +182,14 @@ class AlarmWindow(_single_label):
 
         self.setWindowOpacity(transparency)
 
-def __ring(title,content):
+def _ring(title,content):
 
     app = QApplication(sys.argv)
-    window = AlarmWindow("./resource/8736.wav",title,content)
+    window = AlarmWindow("http://localhost:8688/static/8736.wav",title,content)
     window.ctl.start()
     sys.exit(app.exec_())
 
 def ring(title,content):
 
-    t = threading.Thread(target=__ring,args=(title,content))
-    t.start()
+    process = multiprocessing.Process(target=_ring,args=(title,content))
+    process.start()

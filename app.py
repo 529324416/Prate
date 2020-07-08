@@ -35,6 +35,14 @@ def alarm():
         except KeyError as e:
             return f"interface error : missing parameter:{e}"
 
+@app.route("/action",methods=['GET'])
+def some_action():
+    '''do something which can not be done after app has run'''
+    
+    if request.method == 'GET':
+        print(url_for("static",filename="8736.wav"))
+        return 'hello world'
+
 
 if __name__ == "__main__":
     
