@@ -140,6 +140,7 @@ class AlarmWindow(_single_label):
         
         self.header.setStyleSheet(r"QLabel{color:rgb(80,80,80);}")
         self.body = QLabel()
+        self.body.setWordWrap(True)
         self.body.setStyleSheet(r"QLabel{color:rgb(96,96,96);}")
         self.font_content = QFont(font_name,15)
         self.body.setFont(self.font_content)
