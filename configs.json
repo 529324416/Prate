@@ -1,0 +1,11 @@
+{
+    "stay_seconds":15,
+    "face_attrs":"#fixed_face{border-radius:10px;background-color:qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(168,237,234,130), stop:1 #fed6e3)}",
+    "window_width":300,
+    "window_height":400,
+    "window_position":"bottom_right",
+    "title_fontsize":18,
+    "content_fontsize":15,
+    "font_filepath":"./static/hanyizhuzi.ttf",
+    "padding_size":10
+}

@@ -1,4 +1,0 @@
-#face{
-    border-radius:10px;
-    background-color:qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(168,237,234,130), stop:1 #fed6e3);
-}
