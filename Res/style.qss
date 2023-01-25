@@ -1,0 +1,17 @@
+#AlarmMainWindow{
+    border-radius: 12px;
+    border: none;
+    background-image: url(./Res/FGGc2BrXMAYTPzZ.png);
+    background-position: center;
+}
+#AlarmMainWindowCover{
+    border-radius: 10px;
+    border: none;
+    background-color:qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(26,28,44,130), stop:1 #1a1c2c)
+}
+#AlarmMainWindowTitle{
+    color: #ecead2;
+}
+#AlarmMainWindowContent{
+    color: #8e8e9f;
+}
