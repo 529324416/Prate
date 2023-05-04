@@ -1,23 +1,21 @@
-# startup a process to run a qt window
 
-from PyQt5.QtCore import *
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
+from PyQt5.QtWidgets import QWidget, QApplication
+import multiprocessing as mp
 import sys
-import time
-from multiprocessing import Process
+from messagebox import AlarmMessageBox
 
-class WindowThread(QThread):
-    def __init__(self):
-        super().__init__(None)
-        
-    def run(self) -> None:
-        self.window = QWidget(None)
-        self.window.resize(300, 300)
-        self.window.setWindowTitle("test window")
-        self.window.show()
+def _create_message_box(title, information):
 
-app = QApplication(sys.argv)
-thread = WindowThread()
-thread.start()
-sys.exit(app.exec_())
+    app = QApplication(sys.argv)
+    box = AlarmMessageBox(titleFont="汉仪铸字木头人W", contentFont="汉仪铸字木头人W")
+    
+    box.set_infos(title, information)
+    box.fadeup()
+    sys.exit(app.exec_())
+
+
+
+if __name__ == "__main__":
+    # mp.freeze_support()
+    p = mp.Process(target=_create_message_box, args=("这是一个很长很长的标题内容", "这是一个简单的测试这是一个简单的测试这是一个简单的测试这"))
+    p.start()
