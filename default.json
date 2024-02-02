@@ -1,0 +1,34 @@
+{
+    "window-size": [
+        280,
+        400
+    ],
+    "screen-pos":"RightBottom",
+    "border-radius": 16,
+    "background-image": null,
+    "overlay-color": "qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(168,237,234,130), stop:1 #fed6e3)",
+    "title-color": "#26203a",
+    "info-color": "#30324d",
+    "padding": 10,
+    "content-padding": 12,
+    "content-gap": 8,
+    "has-title": true,
+    "title-font-name": "汉仪铸字木头人W",
+    "title-font-size": 16,
+    "title-font-style": "normal",
+    "title-font-bold": true,
+
+    "info-font-name": "汉仪铸字木头人W",
+    "info-font-size": 12,
+    "info-font-style": "italic",
+    "info-font-bold": false,
+    "shadow-blur-radius": 15,
+    "shadow-x-offset": 4,
+    "shadow-y-offset": 4,
+    "shadow-color": [
+        0,
+        0,
+        0,
+        120
+    ]
+}
