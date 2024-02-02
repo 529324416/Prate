@@ -495,7 +495,6 @@ class PrateStyleUtils:
 
 class PrateName:
 
-    Window = "PrateWindow"
     Content = "PrateContent"
     Overlay = "PrateOverlay"
     Title = "PrateTitle"
@@ -637,7 +636,6 @@ class PrateWindow(QWidget):
             QFont(title_font_name, title_font_size), 
             QFont(info_font_name, info_font_size)
         )
-
         self.content.move(self._padding_offset)
         self.content.resize(self.size() - self._padding_size)
         self.anim = None
@@ -647,11 +645,11 @@ class PrateWindow(QWidget):
 
         self.anim = TweenAnimation()
         self.anim.append(QtTweenHelper.fade_in(self, 600))
-        self.anim.join(QtTweenHelper.move_up_here(self, 100, 600, EaseType.OUT_EXPO))
+        self.anim.join(QtTweenHelper.move_up_here(self, 100, 600, EaseType.OUT_BACK))
 
         self.anim.append_wait(4000)
-        self.anim.append(QtTweenHelper.fade_out(self, 450))
-        self.anim.join(QtTweenHelper.move_down(self, 100, 600, EaseType.LINEAR))
+        self.anim.append(QtTweenHelper.fade_out(self, 400))
+        self.anim.join(QtTweenHelper.move_down(self, 100, 900, EaseType.OUT_EXPO))
 
     def start_tween_animation(self):
         self.anim.play(self.close)
@@ -896,7 +894,7 @@ class PrateWindowAppearanceConfigure:
         '''craft the window'''
 
         qss = f'''
-#{PrateName.Window}{{
+#{PrateName.Content}{{
     border-radius: {self.border_radius}px;
     background-image: url({self.background_image});
     background-repeat: no-repeat;
@@ -918,6 +916,8 @@ class PrateWindowAppearanceConfigure:
 }}
         '''
 
+        print(qss)
+
         shadowColor = QColor(*self.shadow_color)
         shadow = QGraphicsDropShadowEffect(blurRadius=self.shadow_blur_radius, xOffset=self.shadow_x_offset, yOffset=self.shadow_y_offset, color=shadowColor)
         window = PrateWindow(
@@ -931,9 +931,9 @@ class PrateWindowAppearanceConfigure:
             info_font_name=self.info_font_name,
             info_font_size=self.info_font_size
         )
+        window.setStyleSheet(qss)
         window.content.setGraphicsEffect(shadow)
         window.move(ScreenPosition.get_pos(window.size(), self.screen_pos))
-        window.setStyleSheet(qss)
         return window
 
     
@@ -1001,7 +1001,7 @@ class Prate:
 if __name__ == '__main__':
 
     prate = Prate("default.json")
-    prate.ring("hello", "world")
+    prate.ring("这里是标题", "这里是内容信息，你需要进行的提示")
 
     # note that: the prate.ring function can be used in other application's main loop
     #            a = 0
