@@ -979,34 +979,7 @@ class Prate:
         _invoke_msg_window(self._craft_window, title, content)
 
 
-# def craft_window(title:str, content:str, configure_path:str):
-#     '''craft the window'''
-
-#     global configure
-#     if configure is None:
-#         print(configure_path)
-#         configure = PrateWindowAppearanceConfigure.read(configure_path)
-#         if configure == None: configure = PrateWindowAppearanceConfigure.white()
-
-#     window = configure.craft_window()
-#     window.set_infos(title, content)
-#     return window
-
-# def ring(title = "", content = ""):
-#     '''ring the message box'''
-
-#     _invoke_msg_window(craft_window, title, content, "default.json")
-
-
 if __name__ == '__main__':
 
     prate = Prate("default.json")
     prate.ring("这里是标题", "这里是内容信息，你需要进行的提示")
-
-    # note that: the prate.ring function can be used in other application's main loop
-    #            a = 0
-    #            while 1:
-    #                a += 1
-    #                if a % 3 == 0:
-    #                   prate.ring("hello", "world")
-    #                time.sleep(1)
