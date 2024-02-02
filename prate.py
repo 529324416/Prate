@@ -953,7 +953,7 @@ class PrateWindowAppearanceConfigure:
 class Prate:
     '''provide some simple api to show message box'''
 
-    def __init__(self, configure:str|PrateWindowAppearanceConfigure):
+    def __init__(self, configure:str|PrateWindowAppearanceConfigure = None):
         '''init the prate
         @param configure: the configure of the prate window'''
 
@@ -979,23 +979,23 @@ class Prate:
         _invoke_msg_window(self._craft_window, title, content)
 
 
-def craft_window(title:str, content:str, configure_path:str):
-    '''craft the window'''
+# def craft_window(title:str, content:str, configure_path:str):
+#     '''craft the window'''
 
-    global configure
-    if configure is None:
-        print(configure_path)
-        configure = PrateWindowAppearanceConfigure.read(configure_path)
-        if configure == None: configure = PrateWindowAppearanceConfigure.white()
+#     global configure
+#     if configure is None:
+#         print(configure_path)
+#         configure = PrateWindowAppearanceConfigure.read(configure_path)
+#         if configure == None: configure = PrateWindowAppearanceConfigure.white()
 
-    window = configure.craft_window()
-    window.set_infos(title, content)
-    return window
+#     window = configure.craft_window()
+#     window.set_infos(title, content)
+#     return window
 
-def ring(title = "", content = ""):
-    '''ring the message box'''
+# def ring(title = "", content = ""):
+#     '''ring the message box'''
 
-    _invoke_msg_window(craft_window, title, content, "default.json")
+#     _invoke_msg_window(craft_window, title, content, "default.json")
 
 
 if __name__ == '__main__':
