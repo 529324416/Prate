@@ -4,7 +4,7 @@
         400,
         150
     ],
-    "screen-pos":"TopCenter",
+    "screen-pos":"RightTop",
     "screen-padding":[0, 0],
     "border-radius": 12,
     "background-image": null,
@@ -16,8 +16,8 @@
     "content-gap": 8,
     "has-title": true,
     "title-font-name": "Microsoft JhengHei",
-    "title-font-size": 16,
-    "title-font-style": "italic",
+    "title-font-size": 14,
+    "title-font-style": "normal",
     "title-font-bold": false,
 
     "info-font-name": "Microsoft JhengHei",
@@ -35,12 +35,12 @@
     ],
     "animation":[
         [
-            "offset_from;0.5s;outexpo;(0, 100)",
+            "offset_from;0.5s;outexpo;(-400, 0)",
             "alpha;0.5s;linear;(0, 1)"
         ],
         "wait;4s",
         [
-            "offset;0.8s;linear;(0, -100)",
+            "offset;0.8s;linear;(0, -150)",
             "alpha;0.4s;linear;(1, 0)"
         ]
     ]

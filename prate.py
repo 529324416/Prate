@@ -1185,10 +1185,11 @@ class PrateWindowAppearanceConfigure:
         self.shadow_color = shadow_color
         self.animation = animation
 
-    def craft_window(self):
+    def craft_window(self, debug = False):
         '''craft the window'''
 
-        print("using configure: ", self.name, "to craft window")
+        if debug:
+            print("using configure: ", self.name, "to craft window")
 
         qss = f'''
 #{PrateName.Content}{{
@@ -1232,32 +1233,19 @@ class PrateWindowAppearanceConfigure:
         window.content.setGraphicsEffect(shadow)
         window.move(ScreenPosition.get_pos(window.size(), self.screen_pos, self.screen_padding))
         _anim = PrateAnimationParser.build_animation(window, self.animation)
-        _anim.debug()
+        if debug : _anim.debug()
         window.set_anim(_anim)
         return window
-    
 
-
-    
-# def get_window_crafter(title:str, content:str, configure_path:str):
-    
-#     configure = PrateWindowAppearanceConfigure.read(configure_path)
-#     if configure == None: configure = PrateWindowAppearanceConfigure.white()
-
-#     def _craft_window():
-#         window = configure.craft_window()
-#         window.set_infos(title, content)
-#         return window
-    
-#     return _craft_window
     
 
 class Prate:
     '''provide some simple api to show message box'''
 
-    def __init__(self, configure:str|PrateWindowAppearanceConfigure = None):
+    def __init__(self, configure:str|PrateWindowAppearanceConfigure = None, debug:bool = False):
         '''init the prate
-        @param configure: the configure of the prate window'''
+        @param configure: the configure of the prate window
+        @param debug: debug mode, if True, then output the animation info of current window'''
 
         if isinstance(configure, str):
             self.configure = PrateWindowAppearanceConfigure.read(configure)
@@ -1268,10 +1256,12 @@ class Prate:
         else:
             self.configure = PrateWindowAppearanceConfigure.white()
 
+        self._debug = debug
+
     def _craft_window(self, title:str = "", content:str = ""):
         '''ring the message box'''
 
-        window = self.configure.craft_window()
+        window = self.configure.craft_window(self._debug)
         window.set_infos(title, content)
         window.show_up()
     

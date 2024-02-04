@@ -2,7 +2,7 @@
     "name":"测试配置",
     "window-size": [
         400,
-        150
+        120
     ],
     "screen-pos":"TopCenter",
     "screen-padding":[0, 0],
@@ -16,8 +16,8 @@
     "content-gap": 8,
     "has-title": true,
     "title-font-name": "Microsoft JhengHei",
-    "title-font-size": 16,
-    "title-font-style": "italic",
+    "title-font-size": 14,
+    "title-font-style": "normal",
     "title-font-bold": false,
 
     "info-font-name": "Microsoft JhengHei",
