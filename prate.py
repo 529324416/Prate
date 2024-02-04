@@ -20,17 +20,17 @@ from PyQt5.QtWidgets import QGraphicsDropShadowEffect
 from PyQt5.QtGui import QMouseEvent, QMoveEvent
 from PyQt5.QtGui import QFont, QColor
 
-def _thread_func(_craft_window_callback : callable, *args, **kwargs):
+def _thread_func(_raise_window : object, *args, **kwargs):
     '''wrapper invoke function'''
 
+    if not callable(_raise_window):
+        return
+
     _app = QApplication(sys.argv)
-    window = _craft_window_callback(*args, **kwargs)
-    window.show()
-    window.build_tween_animation()
-    window.start_tween_animation()
+    _raise_window(*args, **kwargs)
     _app.exec_()
 
-def _invoke_msg_window(_craft_window : callable, *args, **kwargs):
+def _invoke_msg_window(_craft_window : object, *args, **kwargs):
     '''start to show tip window'''
 
     _process = multiprocessing.Process(target=_thread_func, args=(_craft_window, *args, *kwargs))
@@ -44,6 +44,9 @@ def _lerp(a:float, b:float, p:float) -> float:
     @return: the value after linear interpolation'''
 
     return a + (b - a) * p
+
+def _empty(*args, **kwargs):
+    '''empty function'''
 
 class EaseFunction:
     '''provide some simple tween functions'''
@@ -134,16 +137,18 @@ class TweenTimer(QObject):
 class _TweenBase:
     '''the specific tween animation'''
 
-    def __init__(self, on_update:object, duration:int = 2000):
+    def __init__(self, duration:int = 2000):
         '''init the tween animation
         @param on_update: the update callback function
         @param counter: the duration of the animation( in millisecond )'''
 
-        self.on_update = on_update
         self.on_completed = None
         self._duration = duration
         self.__counter = 0
         self.__counter_reci = 0
+
+    def on_update(self, p: float) -> None:
+        '''empty callback function'''
 
     @property
     def duration(self):
@@ -151,7 +156,7 @@ class _TweenBase:
 
         return self._duration
 
-    def ready(self, interval:int = 5):
+    def on_ready(self, interval:int = 5):
         '''ready the tween animation
         @param interval: the interval of the animation, in millisecond'''
 
@@ -191,26 +196,28 @@ class _TweenSequence(_TweenBase):
     def __init__(self):
         '''init the tween animation'''
 
-        super().__init__(self.__update_group, 0)
+        super().__init__()
         self.tweens = []
         self.curmax_dur = 0
 
-    def ready(self, interval: int = 5):
+    def on_ready(self, interval: int = 5):
         '''ready the tween animation
         @param interval: the interval of the animation, in millisecond'''
 
-        super().ready(interval)
+        super().on_ready(interval)
         for tween in self.tweens:
-            tween.ready(interval)
+            tween.on_ready(interval)
 
     def append(self, tween: _TweenBase):
         '''append a new tween '''
 
+        if tween is None:
+            return
         self.tweens.append(tween)
         self.curmax_dur = max(self.curmax_dur, tween.duration)
         self._duration = self.curmax_dur
 
-    def __update_group(self, p):
+    def on_update(self, p):
         '''update the tween animation'''
 
         for tween in self.tweens:
@@ -284,7 +291,7 @@ class TweenAnimation:
                 return
             
             _anim = anim_queue.get()
-            _anim.ready(self.__timer.timer.interval())
+            _anim.on_ready(self.__timer.timer.interval())
             self.__timer.start( _anim.run, __next, _anim.duration)
 
         __next()
@@ -294,22 +301,20 @@ class TweenAnimation:
 
         self.__timer.timer.stop()
 
+    def debug(self):
+        '''print the animation list'''
 
+        print("---- ---- ----")
+        for tween in self.__tweens:
+            if isinstance(tween, _TweenSequence):
+                print("sequence:")
+                for sub_tween in tween.tweens:
+                    print(sub_tween)
 
-# class TweenDebug(_TweenBase):
-#     '''just use for debug'''
+            else:
+                print(tween)
+            print("---- ---- ----")
 
-#     def __init__(self, debug_content:str = None, duration = 1000):
-#         '''init the tween animation'''
-
-#         super().__init__(self.on_update, duration)
-#         self.debug_content = debug_content
-
-#     def on_update(self, p: float):
-#         '''update the tween animation
-#         @param p: the progress of the animation, from 0 to 1'''
-
-#         print('debug:', self.debug_content, p)
 
 class TweenWait(_TweenBase):
     '''wait for a while'''
@@ -317,13 +322,12 @@ class TweenWait(_TweenBase):
     def __init__(self, duration:int = 1000):
         '''init the tween animation'''
 
-        super().__init__(self.on_update, duration)
+        super().__init__(duration)
 
-    def on_update(self, p: float):
-        '''do nothing, just for wait
-        @param p: the progress of the animation, from 0 to 1'''
+    def __str__(self):
+        '''get the string of this tween animation'''
 
-        pass
+        return f"wait {self.duration}ms"
 
 class TweenAlpha(_TweenBase):
     '''control the alpha of target element'''
@@ -355,20 +359,25 @@ class TweenAlpha(_TweenBase):
     def __init__(self, alpha_setter:object, from_alpha:float, to_alpha:float, duration:int = 1000, ease_type:int = EaseType.LINEAR):
         '''init the tween animation'''
 
-        super().__init__(self.on_update, duration)
-        self._alpha_setter = alpha_setter if callable(alpha_setter) else self.empty_setter
+        super().__init__(duration)
+        self._alpha_setter = alpha_setter
         self._from_alpha = from_alpha
         self._to_alpha = to_alpha
         self._ease = EaseType.get_method(ease_type)
 
-    def empty_setter(self, alpha:float):
-        '''empty callback function'''
-        pass
+    def __str__(self):
+        '''get the string of this tween animation'''
+
+        return f"alpha {self._from_alpha} -> {self._to_alpha} in {self.duration}ms"
 
     def on_update(self, p: float):
         '''update the tween animation'''
 
         self._alpha_setter(_lerp(self._from_alpha, self._to_alpha, self._ease(p)))
+
+    def on_ready(self, interval: int = 5):
+        super().on_ready(interval)
+        self._alpha_setter(self._from_alpha)
 
 class TweenMove(_TweenBase):
     '''control the position of target element'''
@@ -384,15 +393,16 @@ class TweenMove(_TweenBase):
     def __init__(self, pos_setter:object, from_pos:tuple, to_pos:tuple, duration:int = 1000, ease_type:int = EaseType.LINEAR):
         '''init the tween animation'''
 
-        super().__init__(self.on_update, duration)
-        self._pos_setter = pos_setter if callable(pos_setter) else self.empty_setter
+        super().__init__(duration)
+        self._pos_setter = pos_setter
         self._from_pos = from_pos
         self._to_pos = to_pos
         self._ease = EaseType.get_method(ease_type)
 
-    def empty_setter(self, pos:tuple):
-        '''empty callback function'''
-        pass
+    def __str__(self):
+        '''get the string of this tween animation'''
+
+        return f"move {self._from_pos} -> {self._to_pos} in {self.duration}ms"
 
     def on_update(self, p: float):
         '''update the tween animation'''
@@ -402,11 +412,86 @@ class TweenMove(_TweenBase):
         y = _lerp(self._from_pos[1], self._to_pos[1], t)
         self._pos_setter(int(x), int(y))
 
+class TweenOffset(_TweenBase):
+    '''control the offset of target element'''
 
+    @staticmethod
+    def offset(pos_setter, pos_getter, offset:tuple, duration:int = 1000, ease_type:int = EaseType.LINEAR):
+        '''create a new tween animation to control the offset of target element'''
 
+        if not callable(pos_setter) or not callable(pos_getter):
+            return None
+        return TweenOffset(pos_setter, pos_getter, offset, duration, ease_type)
 
+    def __init__(self, pos_setter:object, pos_getter:tuple, offset:tuple, duration:int = 1000, ease_type:int = EaseType.LINEAR):
+        '''init the tween animation'''
 
+        super().__init__(duration)
+        self._pos_setter = pos_setter
+        self._pos_getter = pos_getter
+        self._offset = offset
+        self._from_pos = (0, 0)
+        self._to_pos = (0, 0)
+        self._ease = EaseType.get_method(ease_type)
 
+    def __str__(self):
+        '''get the string of this tween animation'''
+
+        return f"offset {self._from_pos} -> {self._to_pos} in {self.duration}ms"
+    
+    def on_ready(self, interval: int = 5):
+        super().on_ready(interval)
+        self._from_pos = self._pos_getter()
+        self._to_pos = (self._from_pos[0] + self._offset[0], self._from_pos[1] + self._offset[1])
+        print("from", self._from_pos, "to", self._to_pos)
+
+    def on_update(self, p: float):
+        '''update the tween animation'''
+
+        t = self._ease(p)
+        x = _lerp(self._from_pos[0], self._to_pos[0], t)
+        y = _lerp(self._from_pos[1], self._to_pos[1], t)
+        self._pos_setter(int(x), int(y))
+
+class TweenOffsetFrom(_TweenBase):
+    '''move to the target position'''
+
+    @staticmethod
+    def from_offset(pos_setter, pos_getter, offset:tuple, duration:int = 1000, ease_type:int = EaseType.LINEAR):
+        '''create a new tween animation to control the offset of target element'''
+
+        if not callable(pos_setter) or not callable(pos_getter):
+            return None
+        return TweenOffsetFrom(pos_setter, pos_getter, offset, duration, ease_type)
+
+    def __init__(self, pos_setter:object, pos_getter:object, offset:tuple, duration:int = 1000, ease_type:int = EaseType.LINEAR):
+        '''init the tween animation'''
+
+        super().__init__(duration)
+        self._pos_setter = pos_setter
+        self._pos_getter = pos_getter
+        self._offset = offset
+        self._to_pos = (0, 0)
+        self._from_pos = (0, 0)
+        self._ease = EaseType.get_method(ease_type)
+
+    def __str__(self):
+        '''get the string of this tween animation'''
+
+        return f"to {self._to_pos} in {self.duration}ms"
+    
+    def on_ready(self, interval: int = 5):
+        super().on_ready(interval)
+        self._to_pos = self._pos_getter()
+        self._from_pos = (self._to_pos[0] - self._offset[0], self._to_pos[1] - self._offset[1])
+
+    def on_update(self, p: float):
+        '''update the tween animation'''
+
+        t = self._ease(p)
+        x = _lerp(self._from_pos[0], self._to_pos[0], t)
+        y = _lerp(self._from_pos[1], self._to_pos[1], t)
+        self._pos_setter(int(x), int(y))
 
 
 class QtTweenHelper:
@@ -512,8 +597,8 @@ class PrateContentBase(QLabel):
         
         self._overlay = QLabel(self)
         self._overlay.setObjectName(PrateName.Overlay)
-        self._overlay.move(0, 0)
-        self._overlay.resize(size)
+        self._overlay.move(-1, -1)
+        self._overlay.resize(size + QSize(2, 2))
 
     @property
     def overlay(self):
@@ -639,20 +724,14 @@ class PrateWindow(QWidget):
         self.content.move(self._padding_offset)
         self.content.resize(self.size() - self._padding_size)
         self.anim = None
-    
-    def build_tween_animation(self):
-        '''build the tween animation'''
 
-        self.anim = TweenAnimation()
-        self.anim.append(QtTweenHelper.fade_in(self, 600))
-        self.anim.join(QtTweenHelper.move_up_here(self, 100, 600, EaseType.OUT_BACK))
+    def show_up(self):
+        '''play the animation of the window'''
 
-        self.anim.append_wait(4000)
-        self.anim.append(QtTweenHelper.fade_out(self, 400))
-        self.anim.join(QtTweenHelper.move_down(self, 100, 900, EaseType.OUT_EXPO))
-
-    def start_tween_animation(self):
-        self.anim.play(self.close)
+        if self.anim != None:
+            if self.isHidden():
+                self.show()
+            self.anim.play(self.close)
     
     def mouseDoubleClickEvent(self, a0: QMouseEvent) -> None:
         self.anim.stop()
@@ -667,46 +746,17 @@ class PrateWindow(QWidget):
 
         self.content.set_content(title, content)
 
+    def set_anim(self, anim:TweenAnimation):
+        '''set the animation of the window'''
+
+        if isinstance(anim, TweenAnimation):
+            self.anim = anim
+
     @property
     def visible_size(self):
         '''get the real size of the window'''
 
         return self.size() - self._padding_size
-
-
-
-class ScreenPosition:
-
-    LeftBottom = "leftbottom"
-    LeftTop = "lefttop"
-    RightBottom = "rightbottom"
-    RightTop = "righttop"
-    Center = "center"
-
-    def get_pos(size, flag:str):
-        
-
-        if isinstance(size, list) or isinstance(size, tuple):
-            size = QSize(*size)
-
-        if flag.lower() == ScreenPosition.LeftBottom:
-            return ScreenPositionUtils.get_left_bottom(size)
-        
-        if flag.lower() == ScreenPosition.LeftTop:
-            return ScreenPositionUtils.get_left_top(size)
-        
-        if flag.lower() == ScreenPosition.RightBottom:
-            return ScreenPositionUtils.get_right_bottom(size)
-        
-        if flag.lower() == ScreenPosition.RightTop:
-            return ScreenPositionUtils.get_right_top(size)
-        
-        if flag.lower() == ScreenPosition.Center:
-            return ScreenPositionUtils.get_center(size)
-        
-        return QPoint()
-
-
 
 
 class ScreenPositionUtils:
@@ -741,6 +791,211 @@ class ScreenPositionUtils:
         
         screen_size = QApplication.primaryScreen().size()
         return QPoint((screen_size.width() - size.width()) // 2, (screen_size.height() - size.height()) // 2)
+    
+    @staticmethod
+    def get_top_center(size: QSize, padding: QSize = QSize(12, 12)):
+            
+        screen_size = QApplication.primaryScreen().size()
+        return QPoint((screen_size.width() - size.width()) // 2, padding.height())
+    
+    @staticmethod
+    def get_bottom_center(size: QSize, padding: QSize = QSize(12, 12)):
+            
+        screen_size = QApplication.primaryScreen().size()
+        return QPoint((screen_size.width() - size.width()) // 2, screen_size.height() - size.height() - padding.height())
+    
+    @staticmethod
+    def get_left_center(size: QSize, padding: QSize = QSize(12, 12)):
+                
+        screen_size = QApplication.primaryScreen().size()
+        return QPoint(padding.width(), (screen_size.height() - size.height()) // 2)
+    
+    @staticmethod
+    def get_right_center(size: QSize, padding: QSize = QSize(12, 12)):
+                    
+        screen_size = QApplication.primaryScreen().size()
+        return QPoint(screen_size.width() - size.width() - padding.width(), (screen_size.height() - size.height()) // 2)
+
+class ScreenPosition:
+
+    LeftBottom = "leftbottom"
+    LeftTop = "lefttop"
+    RightBottom = "rightbottom"
+    RightTop = "righttop"
+    Center = "center"
+    CenterTop = "topcenter"
+    CenterBottom = "bottomcenter"
+    CenterLeft = "leftcenter"
+    CenterRight = "rightcenter"
+
+    functions = {
+        LeftBottom: ScreenPositionUtils.get_left_bottom,
+        LeftTop: ScreenPositionUtils.get_left_top,
+        RightBottom: ScreenPositionUtils.get_right_bottom,
+        RightTop: ScreenPositionUtils.get_right_top,
+        Center: ScreenPositionUtils.get_center,
+        CenterTop: ScreenPositionUtils.get_top_center,
+        CenterBottom: ScreenPositionUtils.get_bottom_center,
+        CenterLeft: ScreenPositionUtils.get_left_center,
+        CenterRight: ScreenPositionUtils.get_right_center
+    }
+
+    def get_pos(size, flag:str, padding:list = (12, 12)):
+
+        if isinstance(size, list) or isinstance(size, tuple):
+            size = QSize(*size)
+
+        _lower = flag.lower()
+        if _lower in ScreenPosition.functions:
+            return ScreenPosition.functions[_lower](size, QSize(*padding))
+        return QPoint()
+
+
+class PrateAnimationParser:
+    '''parse the animation string'''
+
+    @staticmethod
+    def build_animation(window: QWidget, animation_list) -> TweenAnimation:
+        '''build the animation'''
+
+        anim = TweenAnimation()
+        for info in animation_list:
+            if isinstance(info, list):
+                _sequence = _TweenSequence()
+                for subinfo in info:
+                    sub_anim = PrateAnimationParser.build_single_animaion(window, subinfo)
+                    _sequence.append(sub_anim)
+                anim.append(_sequence)
+            else:
+                sub_anim = PrateAnimationParser.build_single_animaion(window, info)
+                anim.append(sub_anim)
+        return anim
+
+    @staticmethod
+    def build_single_animaion(window: QWidget, info:str) -> _TweenBase:
+        '''build the animation'''
+
+        if not isinstance(info, str):return None
+
+        args = info.split(";")
+        if len(args) < 2:return None
+        
+        tween_name = args[0]
+        if tween_name == "move":
+            if len(args) < 5:return None
+            _duration = PrateAnimationParser.get_time(args[1])
+            if _duration is None:return None
+            _ease = PrateAnimationParser.get_ease_type(args[2])
+            _offset = PrateAnimationParser.parse_pos_tuple(args[3])
+            _offset = PrateAnimationParser.parse_pos_tuple(args[4])
+            if _offset is None or _offset is None:
+                return None
+            return TweenMove(window.move, _offset, _offset, _duration, _ease)
+
+        elif tween_name == "wait":
+            _duration = PrateAnimationParser.get_time(args[1])
+            if _duration is None:
+                return None
+            return TweenWait(_duration)
+        
+        elif tween_name == "alpha":
+            if len(args) < 4:return None
+            _duration = PrateAnimationParser.get_time(args[1])
+            if _duration is None:return None
+            _ease = PrateAnimationParser.get_ease_type(args[2])
+            _offset = PrateAnimationParser.parse_alpha_tuple(args[3])
+            if _offset is None:return None
+            return TweenAlpha(window.setWindowOpacity, _offset[0], _offset[1], _duration, _ease)
+        
+        elif tween_name == "offset":
+            if len(args) < 4:return None
+            _duration = PrateAnimationParser.get_time(args[1])
+            if _duration is None:return None
+            _ease = PrateAnimationParser.get_ease_type(args[2])
+            _offset = PrateAnimationParser.parse_pos_tuple(args[3])
+            if _offset is None:return None
+            pos_getter = PrateAnimationParser.craft_pos_getter(window)
+            return TweenOffset(window.move, pos_getter, _offset, _duration, _ease)
+        
+        elif tween_name == "offset_from":
+            '''to the target pos'''
+
+            if len(args) < 4:return None
+            _duration = PrateAnimationParser.get_time(args[1])
+            if _duration is None:return None
+            _ease = PrateAnimationParser.get_ease_type(args[2])
+            _offset = PrateAnimationParser.parse_pos_tuple(args[3])
+            if _offset is None:return None
+            pos_getter = PrateAnimationParser.craft_pos_getter(window)
+            return TweenOffsetFrom(window.move, pos_getter, _offset, _duration, _ease)
+        
+        return None
+    
+    def craft_pos_getter(window:QWidget):
+        '''craft the position getter'''
+
+        def pos_getter():
+            return (window.x(), window.y())
+        return pos_getter
+
+    def get_time(timestr:str):
+        '''get the time from string
+        @param timestr: the time string'''
+
+        timestr = timestr.strip('s').strip('S')
+        try:
+            return int(float(timestr) * 1000)
+        except Exception:
+            return None
+
+    def get_ease_type(easestr:str) -> int:
+        '''get the ease type from string
+        @param easestr: the ease type string'''
+
+        if easestr.lower() == "linear":
+            return EaseType.LINEAR
+        
+        if easestr.lower() == "outexpo":
+            return EaseType.OUT_EXPO
+        
+        if easestr.lower() == "outback":
+            return EaseType.OUT_BACK
+        
+        return EaseType.LINEAR
+    
+    def get_float(floatstr:str) -> float:
+        '''get the float from string
+        @param floatstr: the float string'''
+
+        try:
+            return float(floatstr)
+        except Exception:
+            return None
+
+    def parse_alpha_tuple(alphastr:str) -> tuple:
+        '''parse the alpha string to tuple
+        @param alphastr: the alpha string'''
+
+        alphastr = alphastr.strip("(").strip(")")
+        try:
+            return tuple(map(float, alphastr.split(",")))
+        except Exception:
+            return None
+
+    def parse_pos_tuple(posstr:str) -> tuple:
+        '''parse the position string to tuple
+        @param posstr: the position string'''
+
+        posstr = posstr.strip("(").strip(")")
+        try:
+            return tuple(map(int, posstr.split(",")))
+        except Exception:
+            return None
+
+
+
+
+
 
 class PrateWindowAppearanceConfigure:
     '''configure the appearance of prate window'''
@@ -755,8 +1010,10 @@ class PrateWindowAppearanceConfigure:
         '''save style to json'''
 
         configure = {}
+        configure.setdefault("name", style.name)
         configure.setdefault("window-size", style.window_size)
         configure.setdefault("screen-pos", style.screen_pos)
+        configure.setdefault("screen-padding", style.screen_padding)
         configure.setdefault("border-radius", style.border_radius)
         configure.setdefault("background-image", style.background_image)
         configure.setdefault("overlay-color", style.overlay_color)
@@ -778,6 +1035,7 @@ class PrateWindowAppearanceConfigure:
         configure.setdefault("shadow-x-offset", style.shadow_x_offset)
         configure.setdefault("shadow-y-offset", style.shadow_y_offset)
         configure.setdefault("shadow-color", style.shadow_color)
+        configure.setdefault("animation", style.animation)
 
         with open(filepath, "w", encoding='utf-8') as file:
             file.write(json.dumps(configure, indent=4))
@@ -791,8 +1049,10 @@ class PrateWindowAppearanceConfigure:
 
         try:
             return PrateWindowAppearanceConfigure(
+                configure["name"],
                 configure["window-size"],
                 configure["screen-pos"],
+                configure["screen-padding"],
                 configure["border-radius"],
                 configure["background-image"],
                 configure["overlay-color"],
@@ -814,9 +1074,11 @@ class PrateWindowAppearanceConfigure:
                 configure["shadow-blur-radius"],
                 configure["shadow-x-offset"],
                 configure["shadow-y-offset"],
-                configure["shadow-color"]
+                configure["shadow-color"],
+                configure["animation"]
             )
-        except Exception:
+        except Exception as e:
+            print(e)
             return None
 
     @staticmethod
@@ -834,12 +1096,25 @@ class PrateWindowAppearanceConfigure:
             title_color="#c4c4c4",
             info_color="#969696"
         )
+    
+    @staticmethod
+    def dark_image(image_path:str):
+        '''dark theme with background image'''
+
+        return PrateWindowAppearanceConfigure(
+            background_image=image_path,
+            overlay_color="qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(26,28,44,130), stop:1 #1a1c2c)",
+            title_color="#c4c4c4",
+            info_color="#969696"
+        )
 
     def __init__(
         self,
+        name = "System Default Configure",
         window_size = [280, 400],
         screen_pos = "RightBottom",
-        border_radius:int = 16,
+        screen_padding = (12, 12),
+        border_radius:int = 12,
         background_image:str = None,
         overlay_color:str = "rgba(0, 0, 0, 0.3)",
         title_color:str = "#c4c4c4",
@@ -859,15 +1134,34 @@ class PrateWindowAppearanceConfigure:
         info_font_bold:bool = False,
         info_font_style:str = "normal",
 
-        shadow_blur_radius:int = 15,
-        shadow_x_offset:int = 4,
-        shadow_y_offset:int = 4,
-        shadow_color:list = [ 0, 0, 0, 120 ]
+        shadow_blur_radius:int = 20,
+        shadow_x_offset:int = 2,
+        shadow_y_offset:int = 2,
+        shadow_color:list = [ 0, 0, 0, 100 ],
+        animation = [
+            [
+                "move;0.5s;linear;(100, 0)",
+                "alpha;0.5s;linear;(0, 1)"
+            ],
+            "wait;4s",
+            [
+                "move;0.5s;linear;(-100, 0)",
+                "alpha;0.5s;linear;(1, 0)"
+            ]
+        ]
     ):
         '''init the configure'''
 
+        self.name = name
         self.window_size = window_size
         self.screen_pos = screen_pos
+        if isinstance(screen_padding, tuple) or isinstance(screen_padding, list):
+            self.screen_padding = list(screen_padding)
+        elif isinstance(screen_padding, int):
+            self.screen_padding = [screen_padding, screen_padding]
+        else:
+            self.screen_padding = [0, 0]
+
         self.border_radius = border_radius
         self.background_image = background_image
         self.overlay_color = overlay_color
@@ -889,9 +1183,12 @@ class PrateWindowAppearanceConfigure:
         self.shadow_x_offset = shadow_x_offset
         self.shadow_y_offset = shadow_y_offset
         self.shadow_color = shadow_color
+        self.animation = animation
 
     def craft_window(self):
         '''craft the window'''
+
+        print("using configure: ", self.name, "to craft window")
 
         qss = f'''
 #{PrateName.Content}{{
@@ -916,7 +1213,7 @@ class PrateWindowAppearanceConfigure:
 }}
         '''
 
-        print(qss)
+        # print(qss)
 
         shadowColor = QColor(*self.shadow_color)
         shadow = QGraphicsDropShadowEffect(blurRadius=self.shadow_blur_radius, xOffset=self.shadow_x_offset, yOffset=self.shadow_y_offset, color=shadowColor)
@@ -933,8 +1230,13 @@ class PrateWindowAppearanceConfigure:
         )
         window.setStyleSheet(qss)
         window.content.setGraphicsEffect(shadow)
-        window.move(ScreenPosition.get_pos(window.size(), self.screen_pos))
+        window.move(ScreenPosition.get_pos(window.size(), self.screen_pos, self.screen_padding))
+        _anim = PrateAnimationParser.build_animation(window, self.animation)
+        _anim.debug()
+        window.set_anim(_anim)
         return window
+    
+
 
     
 # def get_window_crafter(title:str, content:str, configure_path:str):
@@ -971,7 +1273,7 @@ class Prate:
 
         window = self.configure.craft_window()
         window.set_infos(title, content)
-        return window
+        window.show_up()
     
     def ring(self, title:str = "", content:str = ""):
         '''ring the message box'''
@@ -981,5 +1283,5 @@ class Prate:
 
 if __name__ == '__main__':
 
-    prate = Prate("default.json")
-    prate.ring("这里是标题", "这里是内容信息，你需要进行的提示")
+    prate = Prate("./dark.json")
+    prate.ring("小摩托下载器", "这里是内容信息，你需要进行的提示")
