@@ -1249,6 +1249,27 @@ class PrateWindowAppearanceConfigure:
 class Prate:
     '''provide some simple api to show message box'''
 
+    @staticmethod
+    def create_prate(configure:str|PrateWindowAppearanceConfigure = None, as_sub_module:bool = True, debug:bool = False):
+        '''create a prate instance with the given configure, if configure is invalid, then return None
+        @param configure: the configure of the prate window
+        @param as_sub_module: if True, then run the prate as a sub module
+        @param debug: debug mode, if True, then output the animation info of current window'''
+
+        if isinstance(configure, str):
+            '''if configure is a string, then read the configure from file'''
+
+            conf = PrateWindowAppearanceConfigure.read(configure)
+            if conf is None: return None
+            return Prate(conf, as_sub_module=as_sub_module, debug=debug)
+        
+        elif isinstance(configure, PrateWindowAppearanceConfigure):
+            '''if configure is a PrateWindowAppearanceConfigure, then use it directly'''
+
+            return Prate(configure, as_sub_module=as_sub_module, debug=debug)
+        
+        return None
+
     def __init__(self, configure:str|PrateWindowAppearanceConfigure = None, as_sub_module:bool = True, debug:bool = False):
         '''init the prate
         @param configure: the configure of the prate window
