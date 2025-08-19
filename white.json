@@ -35,13 +35,13 @@
     ],
     "animation":[
         [
-            "offset_from;0.5s;outexpo;(0, 100)",
+            "offset_from;0.5s;outback;(0, 100)",
             "alpha;0.5s;linear;(0, 1)"
         ],
         "wait;4s",
         [
-            "offset;0.8s;linear;(-400, 0)",
-            "alpha;0.4s;linear;(1, 0)"
+            "offset;0.6s;outexpo;(0, -50)",
+            "alpha;0.3s;linear;(1, 0)"
         ]
     ]
 }

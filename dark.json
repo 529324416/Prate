@@ -5,7 +5,7 @@
         150
     ],
     "screen-pos":"RightTop",
-    "screen-padding":[0, 0],
+    "screen-padding":[20, 20],
     "border-radius": 12,
     "background-image": null,
     "overlay-color": "#16171c",

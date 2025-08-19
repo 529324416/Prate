@@ -4,10 +4,10 @@
         280,
         400
     ],
-    "screen-pos":"LeftTop",
-    "screen-padding":[0, 0],
+    "screen-pos":"RightBottom",
+    "screen-padding":[16, 16],
     "border-radius": 12,
-    "background-image": "D:/原台式机数据备份/封面/FadyyOnXgAEINFH.png",
+    "background-image": "D:/原台式机数据备份/封面/FGGc2BrXMAYTPzZ.png",
     "overlay-color": "qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(26,28,44,130), stop:1 #1a1c2c)",
     "title-color": "#c4c4c4",
     "info-color": "#969696",
@@ -35,12 +35,12 @@
     ],
     "animation":[
         [
-            "offset_from;0.5s;outexpo;(100, 0)",
+            "offset_from;0.5s;outexpo;(0, -100)",
             "alpha;0.5s;linear;(0, 1)"
         ],
         "wait;4s",
         [
-            "offset;0.8s;linear;(-100, 0)",
+            "offset;0.8s;linear;(0, 50)",
             "alpha;0.4s;linear;(1, 0)"
         ]
     ]

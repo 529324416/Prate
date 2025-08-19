@@ -7,6 +7,7 @@ import sys
 import json
 import math
 import queue
+import threading
 import multiprocessing
 
 from PyQt5.QtCore import Qt
@@ -30,8 +31,16 @@ def _thread_func(_raise_window : object, *args, **kwargs):
     _raise_window(*args, **kwargs)
     _app.exec_()
 
-def _invoke_msg_window(_craft_window : object, *args, **kwargs):
-    '''start to show tip window'''
+def _invoke_msg_window_as_thread(_craft_window : object, *args, **kwargs):
+    '''start to show tip window
+    @param _craft_window: the window handle function'''
+
+    _thread = threading.Thread(target=_thread_func, args=(_craft_window, *args, *kwargs))
+    _thread.start()
+
+def _invoke_msg_window_as_process(_craft_window : object, *args, **kwargs):
+    '''start to show tip window
+    @param _craft_window: the window handle function'''
 
     _process = multiprocessing.Process(target=_thread_func, args=(_craft_window, *args, *kwargs))
     _process.start()
@@ -1237,12 +1246,10 @@ class PrateWindowAppearanceConfigure:
         window.set_anim(_anim)
         return window
 
-    
-
 class Prate:
     '''provide some simple api to show message box'''
 
-    def __init__(self, configure:str|PrateWindowAppearanceConfigure = None, debug:bool = False):
+    def __init__(self, configure:str|PrateWindowAppearanceConfigure = None, as_sub_module:bool = True, debug:bool = False):
         '''init the prate
         @param configure: the configure of the prate window
         @param debug: debug mode, if True, then output the animation info of current window'''
@@ -1254,8 +1261,11 @@ class Prate:
         elif isinstance(configure, PrateWindowAppearanceConfigure):
             self.configure = configure
         else:
+            if configure is not None:
+                print("invalid configure type, use default white configure")
             self.configure = PrateWindowAppearanceConfigure.white()
 
+        self._as_sub_module = as_sub_module
         self._debug = debug
 
     def _craft_window(self, title:str = "", content:str = ""):
@@ -1268,10 +1278,13 @@ class Prate:
     def ring(self, title:str = "", content:str = ""):
         '''ring the message box'''
 
-        _invoke_msg_window(self._craft_window, title, content)
+        if self._as_sub_module:
+            _invoke_msg_window_as_thread(self._craft_window, title, content)
+            return
+        _invoke_msg_window_as_process(self._craft_window, title, content)
 
 
 if __name__ == '__main__':
 
     prate = Prate("./dark.json")
-    prate.ring("小摩托下载器", "这里是内容信息，你需要进行的提示")
+    prate.ring("Prate标题栏", "Prate内容信息")
